@@ -193,6 +193,8 @@ fun AccountScreen() {
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
+        HouseholdSection()
+
         SentLog()
 
         TextButton(onClick = { scope.launch { Supa.client.auth.signOut() } }) { Text("Keluar") }
