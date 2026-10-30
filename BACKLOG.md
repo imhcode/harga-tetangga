@@ -75,7 +75,7 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 - [ ] Jawaban Spark tampil di HP fisik, bukan emulator. Di MuMu sudah jalan (30 Okt: "Beras adalah kebutuhan pokok dapur.", muse-spark-1.3, 1.828 ms); HP fisik belum
 - [x] Cari string `LLM_` di APK dan repo: tidak ditemukan (30 Okt)
 - [ ] Official Rules tidak melarang pendekatan ini. Ringkasan aturan ada di IDEA.md (kode baru selama acara, repo publik tanpa rahasia dan struk asli); tunggu konfirmasimu
-- [ ] F0-03 menunjukkan struk Indonesia bisa dibaca. Script siap (`tools/receipt-probe.ts`), belum dijalankan pada struk nyata
+- [x] F0-03 menunjukkan struk Indonesia bisa dibaca. 24/24 baris benar pada 3 struk, total cocok semua; `minimal` sama akurat dan ±2× lebih cepat (5,3 s vs 9,9 s). Detail: [metrics/2026-10-30-receipt-probe.md](metrics/2026-10-30-receipt-probe.md). Sampel kecil, bukan struk Kudus
 
 **Status F0 (30 Okt):** F0-02, F0-04 sampai F0-07 selesai. Supabase project `oytzkvclenotyjvqwpkb` (ap-southeast-2), `ping-model` ter-deploy dan menolak anon key, sehingga hanya user yang login bisa memakai kredit Meta.
 
