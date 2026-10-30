@@ -185,7 +185,14 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 
 **Gerbang HITL F4**
 - [ ] Setiap item yang selesai dicoba di HP dengan data nyata
-- [ ] Item yang tidak selesai dicabut dari menu aplikasi, bukan dibiarkan setengah jadi
+- [x] Item yang tidak selesai dicabut dari menu aplikasi, bukan dibiarkan setengah jadi. Semua lima item selesai; tidak ada yang setengah jadi
+
+**Status F4 (30 Okt):** kelima item selesai, ter-deploy, dan di-push.
+- F4-01 kaskade Spark minimal → Spark low → Wonder, setiap tingkat dicatat. Ukuran per tingkat: [metrics/2026-10-30-cascade.md](metrics/2026-10-30-cascade.md) (semua 100% pada 3 struk jelas; Wonder ±6× biaya)
+- F4-02 sisa: petunjuk "hapus centang barang yang sudah ada di rumah" di usulan asisten
+- F4-03 suara: rekam di app → `voice-list` → daftar centang. Jalur server diuji dengan WAV TTS (transkrip benar, 5 barang); di MuMu rekaman sampai ke server tapi mikrofon emulator hening. **Pengenalan suara nyata belum diuji di HP**
+- F4-04 tanya riwayat: tool `riwayat_pembelian`, diuji dengan data palsu (kapan terakhir beli, total sebulan)
+- F4-05 privasi: kotak hitam di pratinjau dicat ke foto sebelum dikirim; log kiriman di tab Akun. Diuji di MuMu pada baris nomor kartu (1 area ditutup, 219 KB, 720×1280). Catatan: titik awal kotak bergeser sedikit dari sentuhan pertama
 
 ---
 
@@ -271,3 +278,6 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 | 30 Okt | "Mau masak X" lewat agen + usulan bertombol, bukan fitur terpisah | Satu agen, satu pola HITL; menghemat ±0,7 jam F4 |
 | 30 Okt | Rencana vs struk dicocokkan tanpa AI: produk sama, atau kata kunci pertama label ada di nama produk; skor terbanyak menang. Manusia mengoreksi tanda sebelum simpan | Cepat, bisa dijelaskan, dan metrik "di luar rencana" tetap dikonfirmasi manusia |
 | 30 Okt | Kamu dan istri memakai satu akun sampai F5 | Data masih per akun; akun kedua akan kosong |
+| 30 Okt | Wonder hanya tingkat terakhir kaskade, dipakai bila dua bacaan Spark masih tidak konsisten | Pada struk jelas semua tingkat 100%; Wonder ±6× biaya Spark minimal |
+| 30 Okt | Suara: rekam lalu kirim (endpoint file, `PUSH_TO_TALK`), bukan streaming | Daftar belanja pendek; tanpa proxy WebSocket |
+| 30 Okt | Privasi: pengguna menutup area sendiri, tidak ada deteksi otomatis | Sederhana, bisa dijelaskan, dan keputusan tetap di manusia |
