@@ -1,11 +1,12 @@
 // F0-05: smallest end-to-end call. App -> this function -> Muse Spark -> app.
-// JWT verification stays on (Supabase default), so only signed-in users can call it.
+// Gateway JWT verification stays on, and requireUser rejects the public anon key.
 
 import { chatCompletion, MetaApiError } from "../_shared/meta.ts";
-import { corsHeaders, json, modelApiKey } from "../_shared/http.ts";
+import { corsHeaders, json, modelApiKey, requireUser } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (!(await requireUser(req))) return json({ error: "Sign in first" }, 401);
 
   const { prompt } = await req.json().catch(() => ({ prompt: undefined }));
   const started = Date.now();
