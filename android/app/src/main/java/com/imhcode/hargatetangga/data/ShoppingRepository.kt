@@ -37,6 +37,12 @@ object ShoppingRepository {
     suspend fun parse(text: String): ParseResult =
         callFunction("parse-list", buildJsonObject { put("text", text) })
 
+    // F4-03: a recorded WAV becomes the same items to tick as a typed list.
+    suspend fun parseVoice(wav: ByteArray): ParseResult =
+        callFunction("voice-list", buildJsonObject {
+            put("audio_base64", android.util.Base64.encodeToString(wav, android.util.Base64.NO_WRAP))
+        })
+
     // H4/H5: called only with items the person ticked or accepted.
     suspend fun addItems(items: List<NewListItem>) {
         if (items.isNotEmpty()) Supa.client.postgrest.from("shopping_list_items").insert(items)

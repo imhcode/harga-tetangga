@@ -1,5 +1,9 @@
 package com.imhcode.hargatetangga.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +32,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -144,6 +150,10 @@ private fun ListCard(vm: ShoppingViewModel) {
 
 @Composable
 private fun InputCard(vm: ShoppingViewModel) {
+    val context = LocalContext.current
+    val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.startVoice()
+    }
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Tambah barang", style = MaterialTheme.typography.titleMedium)
@@ -154,8 +164,31 @@ private fun InputCard(vm: ShoppingViewModel) {
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Button(onClick = vm::parse, enabled = vm.busy == null && vm.draftText.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
-                Text("Urai daftar")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = vm::parse,
+                    enabled = vm.busy == null && !vm.recording && vm.draftText.isNotBlank(),
+                    modifier = Modifier.weight(1f),
+                ) { Text("Urai daftar") }
+                // F4-03: tap to start, tap again to send. Recording stops by itself after a minute.
+                OutlinedButton(
+                    onClick = {
+                        when {
+                            vm.recording -> vm.stopVoice()
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                                PackageManager.PERMISSION_GRANTED -> vm.startVoice()
+                            else -> askMic.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                    enabled = vm.busy == null,
+                    modifier = Modifier.weight(1f),
+                ) { Text(if (vm.recording) "Selesai (0:${"%02d".format(vm.recordedSeconds)})" else "Bicara") }
+            }
+            if (vm.recording) {
+                Text("Sebutkan barangnya, misalnya \"beras lima kilo, minyak dua liter\".", style = MaterialTheme.typography.bodySmall)
+            }
+            vm.transcript?.let {
+                Text(if (it.isBlank()) "Tidak ada suara yang terdengar." else "Terdengar: \"$it\"", style = MaterialTheme.typography.bodySmall)
             }
             if (vm.parsed.isNotEmpty()) {
                 Text("Centang yang mau dimasukkan", style = MaterialTheme.typography.titleSmall)
@@ -215,6 +248,7 @@ private fun AgentCard(vm: ShoppingViewModel) {
             }
             if (vm.proposals.isNotEmpty()) {
                 Text("Usulan asisten", style = MaterialTheme.typography.titleSmall)
+                Text("Hapus centang barang yang sudah ada di rumah.", style = MaterialTheme.typography.bodySmall)
                 CandidateList(vm.proposals)
                 Button(
                     onClick = vm::acceptProposals,

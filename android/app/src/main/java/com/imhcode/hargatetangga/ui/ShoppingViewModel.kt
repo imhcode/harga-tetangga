@@ -14,6 +14,7 @@ import com.imhcode.hargatetangga.data.ParsedItem
 import com.imhcode.hargatetangga.data.Proposal
 import com.imhcode.hargatetangga.data.ShoppingListRow
 import com.imhcode.hargatetangga.data.ShoppingRepository
+import com.imhcode.hargatetangga.data.VoiceRecorder
 import kotlinx.coroutines.launch
 
 // A parsed or proposed item waiting for the person's tick (H4/H5).
@@ -36,6 +37,14 @@ class ShoppingViewModel : ViewModel() {
     val chat = mutableStateListOf<ChatMessage>()
     val proposals = mutableStateListOf<Candidate>()
     var question by mutableStateOf("")
+    var transcript by mutableStateOf<String?>(null) // what the recogniser heard, shown above the ticks
+        private set
+    private var parsedSource = "text"
+    private val recorder = VoiceRecorder()
+    var recording by mutableStateOf(false)
+        private set
+    var recordedSeconds by mutableStateOf(0)
+        private set
     var busy by mutableStateOf<String?>(null) // what is running, shown to the person
         private set
     var error by mutableStateOf<String?>(null)
@@ -74,6 +83,36 @@ class ShoppingViewModel : ViewModel() {
         if (text.isEmpty()) return
         run("Mengurai daftar") {
             val result = ShoppingRepository.parse(text)
+            transcript = null
+            parsedSource = "text"
+            parsed.clear()
+            parsed.addAll(result.items.map { it.toCandidate() })
+        }
+    }
+
+    fun startVoice() {
+        if (recording) return
+        error = null
+        recorder.start(viewModelScope)
+        recording = true
+        viewModelScope.launch {
+            while (recording) {
+                recordedSeconds = recorder.seconds
+                if (recordedSeconds >= VoiceRecorder.MAX_SECONDS) stopVoice()
+                kotlinx.coroutines.delay(250)
+            }
+        }
+    }
+
+    fun stopVoice() {
+        if (!recording) return
+        recording = false
+        run("Mendengarkan") {
+            val wav = recorder.stop()
+            if (wav.size < 44 + 24_000) throw IllegalStateException("Rekaman terlalu pendek. Bicara sedikit lebih lama.")
+            val result = ShoppingRepository.parseVoice(wav)
+            transcript = result.transcript ?: ""
+            parsedSource = "voice"
             parsed.clear()
             parsed.addAll(result.items.map { it.toCandidate() })
         }
@@ -85,14 +124,18 @@ class ShoppingViewModel : ViewModel() {
         val listId = list?.id ?: return
         val chosen = parsed.filter { it.checked }
         run("Menambah barang") {
-            ShoppingRepository.addItems(chosen.map { NewListItem(listId, it.label, it.productId, it.quantity, "text") })
+            ShoppingRepository.addItems(chosen.map { NewListItem(listId, it.label, it.productId, it.quantity, parsedSource) })
             parsed.clear()
+            transcript = null
             draftText = ""
             reload()
         }
     }
 
-    fun cancelParsed() = parsed.clear()
+    fun cancelParsed() {
+        parsed.clear()
+        transcript = null
+    }
 
     fun removeItem(item: ListItemRow) = run("Menghapus barang") {
         ShoppingRepository.deleteItem(item.id)

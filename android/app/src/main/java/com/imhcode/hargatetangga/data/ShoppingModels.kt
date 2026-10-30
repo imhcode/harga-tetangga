@@ -15,7 +15,7 @@ data class ParsedItem(
 )
 
 @Serializable
-data class ParseResult(val items: List<ParsedItem> = emptyList())
+data class ParseResult(val items: List<ParsedItem> = emptyList(), val transcript: String? = null)
 
 @Serializable
 data class ShoppingListRow(val id: String, val status: String = "draft")
