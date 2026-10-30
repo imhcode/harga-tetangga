@@ -161,9 +161,11 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 | F3-06 | Triase bug dari trip: perbaiki yang memblokir alur | Tidak ada bug pemblokir | C+K | 1,3 |
 
 **Gerbang HITL F3**
-- [ ] Minimal dua trip nyata tercatat penuh
-- [ ] Tabel metrik terisi dan kamu percaya angkanya
+- [ ] Minimal dua trip nyata tercatat penuh. Satu trip uji di MuMu (daftar → berangkat → struk Indomaret uji → bandingkan → simpan) sudah jalan; trip nyata belum. Langkahnya di [UJI-LAPANGAN.md](UJI-LAPANGAN.md)
+- [ ] Tabel metrik terisi dan kamu percaya angkanya. `tools/metrics.sql` sudah menghitung trip: uang cukup, error estimasi median, porsi di luar rencana
 - [ ] Kamu memutuskan item F4 dan F5 mana yang dikerjakan, dicatat di Log keputusan
+
+**Status F3 (30 Okt):** F3-01 sampai F3-03 selesai dan ter-deploy. Belum teruji di emulator: tombol "ini [barang daftar]" untuk menautkan baris struk secara manual (ketukan adb tidak mengenai tombolnya). F3-04/05 menunggu trip nyata.
 
 **Jika gagal:** istri belum sempat belanja → simulasikan satu trip dengan struk dari koleksi, dan tulis jujur di README bahwa uji lapangan terbatas.
 
@@ -267,3 +269,5 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 | 30 Okt | Mesin estimasi deterministik dipakai kartu Estimasi dan tool agen | Agen hanya bisa mengulang angka yang dihitung; tidak bisa mengarang |
 | 30 Okt | Rencana toko: cakupan barang dulu, lalu biaya (biaya pindah toko Rp 3.000); uang dibawa = batas atas × (1 + cadangan), dibulatkan ke Rp 5.000 | Pengguna butuh barangnya; uang tunai lebih aman dibulatkan ke atas |
 | 30 Okt | "Mau masak X" lewat agen + usulan bertombol, bukan fitur terpisah | Satu agen, satu pola HITL; menghemat ±0,7 jam F4 |
+| 30 Okt | Rencana vs struk dicocokkan tanpa AI: produk sama, atau kata kunci pertama label ada di nama produk; skor terbanyak menang. Manusia mengoreksi tanda sebelum simpan | Cepat, bisa dijelaskan, dan metrik "di luar rencana" tetap dikonfirmasi manusia |
+| 30 Okt | Kamu dan istri memakai satu akun sampai F5 | Data masih per akun; akun kedua akan kosong |
