@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 private data class Tab(val label: String, val icon: ImageVector)
 
 private val TABS = listOf(
+    Tab("Belanja", Icons.Filled.ShoppingCart),
     Tab("Struk", Icons.Filled.Add),
     Tab("Harga", Icons.AutoMirrored.Filled.List),
     Tab("Akun", Icons.Filled.Person),
@@ -46,8 +48,9 @@ fun MainScreen() {
     ) { padding ->
         Box(Modifier.padding(padding)) {
             when (tab) {
-                0 -> ReceiptScreen(onShowPrices = { tab = 1 })
-                1 -> PricesScreen()
+                0 -> ShoppingScreen()
+                1 -> ReceiptScreen(onShowPrices = { tab = 2 })
+                2 -> PricesScreen()
                 else -> AccountScreen()
             }
         }
