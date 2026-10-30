@@ -35,4 +35,12 @@ select
   (select round(100.0 * sum(lines_corrected) / nullif(sum(lines_total), 0), 1) from verified) as corrected_by_person_pct,
   (select count(*) filter (where escalated) from verified) as escalated_receipts,
   (select round(avg(extract_ms) / 1000.0, 1) from verified) as avg_read_seconds,
-  (select round(avg(verify_ms) / 1000.0, 1) from verified) as avg_review_seconds;
+  (select round(avg(verify_ms) / 1000.0, 1) from verified) as avg_review_seconds,
+  -- F3: trips (estimate before leaving vs receipt after).
+  (select count(*) from trips) as trips,
+  (select count(*) filter (where bring >= receipt_total) from trips) as trips_cash_was_enough,
+  -- Median absolute error of the estimate on planned items that had a price, in percent of what was paid.
+  (select round(100.0 * percentile_cont(0.5) within group (order by abs(planned_actual - planned_estimated) / planned_actual)::numeric, 1)
+     from trips where planned_actual > 0 and planned_estimated > 0) as estimate_median_error_pct,
+  (select round(100.0 * sum(items_off_plan) / nullif(sum(items_bought), 0), 1) from trips) as off_plan_items_pct,
+  (select round(100.0 * sum(off_plan_total) / nullif(sum(receipt_total), 0), 1) from trips) as off_plan_spend_pct;

@@ -16,12 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -56,7 +59,16 @@ fun ReceiptScreen(onShowPrices: () -> Unit, vm: ReceiptViewModel = viewModel()) 
 
     when (val state = vm.state) {
         ReceiptState.Idle -> Centered {
+            LaunchedEffect(Unit) { vm.checkPendingTrip() }
             Text("Foto struk", style = MaterialTheme.typography.headlineMedium)
+            vm.pendingTrip?.let {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Struk dari belanja tadi belum dibandingkan dengan rencana.", style = MaterialTheme.typography.bodyMedium)
+                        Button(onClick = vm::openPendingTrip, modifier = Modifier.fillMaxWidth()) { Text("Bandingkan dengan rencana") }
+                    }
+                }
+            }
             Text(
                 "Harga dari struk disimpan per toko setelah kamu periksa. Foto struk utuh dari atas sampai total.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -92,8 +104,27 @@ fun ReceiptScreen(onShowPrices: () -> Unit, vm: ReceiptViewModel = viewModel()) 
                 "${state.count} harga disimpan" + if (state.corrected > 0) ", ${state.corrected} baris kamu koreksi." else ".",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Button(onClick = onShowPrices, modifier = Modifier.fillMaxWidth()) { Text("Lihat harga") }
+            if (state.trip != null) {
+                Text(
+                    "Kamu sedang belanja dengan daftar. Bandingkan struk ini dengan rencananya.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Button(onClick = { vm.openTrip(state) }, modifier = Modifier.fillMaxWidth()) { Text("Bandingkan dengan rencana") }
+                OutlinedButton(onClick = onShowPrices, modifier = Modifier.fillMaxWidth()) { Text("Lihat harga") }
+            } else {
+                Button(onClick = onShowPrices, modifier = Modifier.fillMaxWidth()) { Text("Lihat harga") }
+            }
             OutlinedButton(onClick = { vm.reset() }, modifier = Modifier.fillMaxWidth()) { Text("Foto struk lain") }
+        }
+
+        is ReceiptState.TripReview -> TripReviewScreen(vm, state.trip)
+
+        is ReceiptState.TripSaved -> Centered {
+            Text("Hasil belanja tersimpan", style = MaterialTheme.typography.headlineSmall)
+            CashLine(state.bring, state.receiptTotal)
+            TripNumbers(state.summary)
+            Text("Daftar belanja ditutup. Daftar baru siap di tab Belanja.", style = MaterialTheme.typography.bodyMedium)
+            Button(onClick = { vm.reset() }, modifier = Modifier.fillMaxWidth()) { Text("Selesai") }
         }
 
         is ReceiptState.Failed -> Centered {

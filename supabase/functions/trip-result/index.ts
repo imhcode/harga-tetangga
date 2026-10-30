@@ -9,9 +9,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (!(await requireUser(req))) return json({ error: "Sign in first" }, 401);
 
+  // Without receipt_id: find the newest confirmed receipt saved after leaving that has no trip yet,
+  // so the comparison survives the app being closed between saving and comparing.
   const body = await req.json().catch(() => null);
-  const receiptId: unknown = body?.receipt_id;
-  if (typeof receiptId !== "string") return json({ error: "receipt_id is required" }, 400);
+  let receiptId: unknown = body?.receipt_id;
+  if (receiptId !== undefined && typeof receiptId !== "string") return json({ error: "receipt_id must be a string" }, 400);
 
   try {
     const db = userClient(req);
@@ -22,15 +24,30 @@ Deno.serve(async (req) => {
     if (!list.data) return json({ has_list: false });
     const listId = list.data.id as string;
 
-    const [receipt, observations, items, estimate] = await Promise.all([
-      db.from("receipts").select("printed_total,status").eq("id", receiptId).single(),
+    const estimate = await db.from("estimates").select("id,bring,plan,created_at").eq("list_id", listId)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (estimate.error) throw estimate.error;
+
+    if (receiptId === undefined) {
+      const [candidates, trips] = await Promise.all([
+        db.from("receipts").select("id").eq("status", "verified")
+          .gte("verified_at", estimate.data?.created_at ?? "1970-01-01").order("verified_at", { ascending: false }).limit(5),
+        db.from("trips").select("receipt_id"),
+      ]);
+      if (candidates.error) throw candidates.error;
+      if (trips.error) throw trips.error;
+      const done = new Set((trips.data ?? []).map((t) => t.receipt_id));
+      receiptId = (candidates.data ?? []).find((r) => !done.has(r.id))?.id;
+      if (!receiptId) return json({ has_list: false });
+    }
+
+    const [receipt, observations, items] = await Promise.all([
+      db.from("receipts").select("printed_total,status").eq("id", receiptId as string).single(),
       db.from("price_observations").select("id,raw_name,product_id,quantity,line_total,unit_price,products(name)")
-        .eq("receipt_id", receiptId).order("created_at"),
+        .eq("receipt_id", receiptId as string).order("created_at"),
       db.from("shopping_list_items").select("id,label,product_id").eq("list_id", listId).order("created_at"),
-      db.from("estimates").select("id,bring,plan").eq("list_id", listId).order("created_at", { ascending: false })
-        .limit(1).maybeSingle(),
     ]);
-    for (const res of [receipt, observations, items, estimate]) if (res.error) throw res.error;
+    for (const res of [receipt, observations, items]) if (res.error) throw res.error;
     if (receipt.data.status !== "verified") return json({ error: "Receipt is not confirmed yet" }, 409);
 
     const lines: ReceiptLineRow[] = (observations.data ?? []).map((o) => ({
@@ -49,6 +66,7 @@ Deno.serve(async (req) => {
     const lineSum = lines.reduce((acc, l) => acc + l.line_total, 0);
     return json({
       has_list: true,
+      receipt_id: receiptId,
       list_id: listId,
       estimate_id: estimate.data?.id ?? null,
       bring: estimate.data ? Number(estimate.data.bring) : null,

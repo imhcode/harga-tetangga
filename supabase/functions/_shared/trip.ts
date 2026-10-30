@@ -46,14 +46,24 @@ export function keyWords(text: string): string[] {
 
 // Same product, or the list label's first key word appears in the product or printed name
 // ("Beras 5 kg" matches "Beras Raja Platinum 5 kg"; "Minyak goreng" does not match "Indomie Goreng").
+// When several labels qualify, the one sharing the most key words wins ("Indomie Ayam Bawang" over "Mie").
+// Misses are fixed by the person on the Trip Result screen.
 export function findListItem(line: ReceiptLineRow, items: PlannedItem[]): PlannedItem | null {
   const exact = items.find((i) => i.product_id && i.product_id === line.product_id);
   if (exact) return exact;
   const haystack = `${line.product_name} ${line.raw_name}`.toLowerCase();
-  return items.find((i) => {
-    const first = keyWords(i.label)[0];
-    return first !== undefined && haystack.includes(first);
-  }) ?? null;
+  let best: PlannedItem | null = null;
+  let bestScore = 0;
+  for (const item of items) {
+    const words = keyWords(item.label);
+    if (words.length === 0 || !haystack.includes(words[0])) continue;
+    const score = words.filter((w) => haystack.includes(w)).length;
+    if (score > bestScore) {
+      best = item;
+      bestScore = score;
+    }
+  }
+  return best;
 }
 
 export function compareTrip(lines: ReceiptLineRow[], items: PlannedItem[], quotes: PlanQuote[]): TripComparison {

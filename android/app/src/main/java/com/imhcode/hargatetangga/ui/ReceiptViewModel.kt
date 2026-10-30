@@ -16,8 +16,16 @@ import com.imhcode.hargatetangga.data.DraftLine
 import com.imhcode.hargatetangga.data.DraftStore
 import com.imhcode.hargatetangga.data.NewProduct
 import com.imhcode.hargatetangga.data.ReceiptDraft
+import com.imhcode.hargatetangga.data.NewTrip
 import com.imhcode.hargatetangga.data.ReceiptRepository
+import com.imhcode.hargatetangga.data.TripLineDto
+import com.imhcode.hargatetangga.data.TripPreview
+import com.imhcode.hargatetangga.data.TripRepository
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.io.File
 
 sealed interface ReceiptState {
@@ -25,8 +33,55 @@ sealed interface ReceiptState {
     data class Preview(val uri: Uri) : ReceiptState
     data class Reading(val uri: Uri) : ReceiptState
     data class Review(val draft: ReceiptDraft) : ReceiptState
-    data class Saved(val count: Int, val corrected: Int) : ReceiptState
+    data class Saved(val count: Int, val corrected: Int, val receiptId: String, val trip: TripPreview?) : ReceiptState
+    data class TripReview(val receiptId: String, val trip: TripPreview) : ReceiptState
+    data class TripSaved(val summary: TripSummary, val bring: Double?, val receiptTotal: Double) : ReceiptState
     data class Failed(val message: String, val uri: Uri) : ReceiptState
+}
+
+// F3: one receipt line on the Trip Result screen; the person can correct the "outside the plan" mark.
+class TripLineEdit(val line: TripLineDto) {
+    var offPlan by mutableStateOf(line.offPlan)
+    // The list item this line fulfils; the person can pick one when the automatic match missed.
+    var listItemId by mutableStateOf(line.listItemId)
+    var listItemLabel by mutableStateOf(line.listItemLabel)
+
+    fun linkTo(id: String, label: String) {
+        listItemId = id
+        listItemLabel = label
+        offPlan = false
+    }
+}
+
+data class TripSummary(
+    val plannedEstimated: Double,
+    val plannedActual: Double,
+    val itemsBought: Int,
+    val itemsOffPlan: Int,
+    val offPlanTotal: Double,
+    val notBought: List<String>,
+)
+
+// Same rules as summarize() in supabase/functions/_shared/trip.ts.
+fun summarizeTrip(trip: TripPreview, lines: List<TripLineEdit>): TripSummary {
+    val bought = lines.filter { !it.offPlan }.mapNotNull { it.listItemId }.toSet()
+    val quotes = trip.quotes.associateBy { it.itemId }
+    var estimated = 0.0
+    var actual = 0.0
+    for (itemId in bought) {
+        val quote = quotes[itemId] ?: continue
+        estimated += quote.unitPrice * quote.quantity
+        actual += lines.filter { !it.offPlan && it.listItemId == itemId }.sumOf { it.line.lineTotal }
+    }
+    val offPlan = lines.filter { it.offPlan }
+    return TripSummary(
+        plannedEstimated = estimated,
+        plannedActual = actual,
+        itemsBought = lines.size,
+        itemsOffPlan = offPlan.size,
+        offPlanTotal = offPlan.sumOf { it.line.lineTotal },
+        notBought = trip.items.filter { it.id !in bought }.map { it.label },
+    )
 }
 
 // One receipt line as the person edits it on the Review screen.
@@ -162,7 +217,9 @@ class ReceiptViewModel(app: Application) : AndroidViewModel(app) {
                 val corrected = edits.count { it.corrected }
                 clearPhotos()
                 edits.clear()
-                state = ReceiptState.Saved(kept.size, corrected)
+                // A failed comparison must not hide that the prices were saved.
+                val trip = runCatching { TripRepository.preview(review.draft.receiptId) }.getOrNull()?.takeIf { it.hasList }
+                state = ReceiptState.Saved(kept.size, corrected, review.draft.receiptId, trip)
             } catch (e: Exception) {
                 saveError = "Gagal menyimpan: ${e.message ?: e::class.simpleName}"
             } finally {
@@ -171,7 +228,75 @@ class ReceiptViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    val tripLines = mutableStateListOf<TripLineEdit>()
+
+    fun openTrip(saved: ReceiptState.Saved) {
+        openTripPreview(saved.receiptId, saved.trip ?: return)
+    }
+
+    private fun openTripPreview(receiptId: String, trip: TripPreview) {
+        tripLines.clear()
+        tripLines.addAll(trip.lines.map { TripLineEdit(it) })
+        state = ReceiptState.TripReview(receiptId, trip)
+    }
+
+    // A receipt saved during a trip whose comparison was never finished (for example the app closed).
+    var pendingTrip by mutableStateOf<TripPreview?>(null)
+        private set
+
+    fun checkPendingTrip() {
+        viewModelScope.launch {
+            pendingTrip = runCatching { TripRepository.preview() }.getOrNull()?.takeIf { it.hasList && it.receiptId != null }
+        }
+    }
+
+    fun openPendingTrip() {
+        val trip = pendingTrip ?: return
+        pendingTrip = null
+        openTripPreview(trip.receiptId!!, trip)
+    }
+
+    // Written only after the person checked the "outside the plan" marks.
+    fun saveTrip() {
+        val review = state as? ReceiptState.TripReview ?: return
+        val trip = review.trip
+        val summary = summarizeTrip(trip, tripLines)
+        saving = true
+        saveError = null
+        viewModelScope.launch {
+            try {
+                TripRepository.save(
+                    NewTrip(
+                        listId = trip.listId!!,
+                        estimateId = trip.estimateId,
+                        receiptId = review.receiptId,
+                        bring = trip.bring,
+                        receiptTotal = trip.receiptTotal,
+                        plannedEstimated = summary.plannedEstimated,
+                        plannedActual = summary.plannedActual,
+                        itemsBought = summary.itemsBought,
+                        itemsOffPlan = summary.itemsOffPlan,
+                        offPlanTotal = summary.offPlanTotal,
+                        itemsNotBought = summary.notBought.size,
+                        details = buildJsonObject {
+                            put("off_plan", JsonArray(tripLines.filter { it.offPlan }.map { JsonPrimitive(it.line.rawName) }))
+                            put("not_bought", JsonArray(summary.notBought.map { JsonPrimitive(it) }))
+                            put("marks_changed", tripLines.count { it.offPlan != it.line.offPlan || it.listItemId != it.line.listItemId })
+                        },
+                    ),
+                )
+                tripLines.clear()
+                state = ReceiptState.TripSaved(summary, trip.bring, trip.receiptTotal)
+            } catch (e: Exception) {
+                saveError = "Gagal menyimpan hasil belanja: ${e.message ?: e::class.simpleName}"
+            } finally {
+                saving = false
+            }
+        }
+    }
+
     fun reset() {
+        tripLines.clear()
         clearPhotos()
         edits.clear()
         saveError = null
