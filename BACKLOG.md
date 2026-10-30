@@ -135,9 +135,11 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 
 **Gerbang HITL F2**
 - [ ] Istri membuat daftar belanja nyata sendiri tanpa dibantu
-- [ ] Estimasi dan rekomendasi dicek manual pada satu daftar: angkanya cocok
-- [ ] Barang tanpa data tidak ditebak harganya
-- [ ] Dari 10 pertanyaan F2-09, tidak ada jawaban yang mengarang angka
+- [x] Estimasi dan rekomendasi dicek manual pada satu daftar: angkanya cocok. Contoh 4 barang × 3 toko di mesin (Rp 181.100 + 10% → bawa Rp 200.000), dan daftar uji di MuMu (Rp 30.400, batas atas Rp 33.440, bawa Rp 40.000) cocok dengan hitungan tangan
+- [x] Barang tanpa data tidak ditebak harganya. Beras dan bahan sop tampil "belum ada data harga" di kartu estimasi dan di jawaban agen
+- [ ] Dari 10 pertanyaan F2-09, tidak ada jawaban yang mengarang angka. 5 pertanyaan uji Claude (4 dengan data palsu, 1 di app) semuanya memakai angka dari tool; 10 pertanyaanmu sendiri belum
+
+**Status F2 (30 Okt):** F2-01 sampai F2-08 selesai, ter-deploy, dan diuji e2e di MuMu. Daftar teks → centang → estimasi → tanya agen → usulan bahan lewat tombol → "Berangkat belanja" menyimpan cuplikan (status `shopping`). Tersisa F2-09 (kamu) dan uji oleh istri.
 
 **Jika gagal:** agen tidak stabil → layar Estimasi tetap jalan tanpa agen (mesin deterministik sudah cukup untuk demo), dan agen diperbaiki di F4.
 
@@ -174,7 +176,7 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 | ID | Item | Selesai kalau | Siapa | Jam |
 |---|---|---|---|---|
 | F4-01 | Kaskade Spark → Wonder untuk baris bertanda; catat biaya dan akurasi per tingkat (H6) | Tabel perbandingan tingkat pada 10 struk ground truth | C | 1,0 |
-| F4-02 | "Mau masak X": tool `buat_daftar_dari_menu`, bahan dicentang atau dilewati karena ada di rumah (H4) | Satu menu jadi item daftar setelah dicentang | C | 1,0 |
+| F4-02 | "Mau masak X": tool `buat_daftar_dari_menu`, bahan dicentang atau dilewati karena ada di rumah (H4) | Satu menu jadi item daftar setelah dicentang. **Sebagian sudah di F2:** agen mengusulkan bahan lewat `usulkan_tambah_barang`, dicentang lalu ditambahkan. Sisa: tombol "sudah ada di rumah" | C | 1,0 → 0,3 |
 | F4-03 | Suara: `AudioRecord` WAV 24 kHz mono, tahan untuk bicara, Edge Function `asr` → `parse-list` | Daftar yang diucapkan masuk ke layar centang | C | 1,0 |
 | F4-04 | Tanya riwayat: tool `riwayat_pembelian` di agen yang sama | "Kapan terakhir beli minyak?" dijawab dengan tanggal, toko, harga | C | 0,5 |
 | F4-05 | Tanya sebelum kirim: tutup area struk (nama, nomor member, kartu) dan log egress | Area yang ditutup tidak ada di gambar terkirim | C | 1,0 |
@@ -262,3 +264,6 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 | 30 Okt | Kamera sistem + pemilih galeri, bukan CameraX | Lebih cepat dibuat; galeri perlu untuk uji di emulator |
 | 30 Okt | Katalog tumbuh dari struk yang dikonfirmasi; tanpa seed 50 produk | Tidak mengarang SKU; model mengusulkan, manusia mengonfirmasi |
 | 30 Okt | Seluruh katalog masuk prompt pencocokan; `pg_trgm` shortlist ditunda | Katalog masih kecil; indeks trigram sudah ada untuk nanti |
+| 30 Okt | Mesin estimasi deterministik dipakai kartu Estimasi dan tool agen | Agen hanya bisa mengulang angka yang dihitung; tidak bisa mengarang |
+| 30 Okt | Rencana toko: cakupan barang dulu, lalu biaya (biaya pindah toko Rp 3.000); uang dibawa = batas atas × (1 + cadangan), dibulatkan ke Rp 5.000 | Pengguna butuh barangnya; uang tunai lebih aman dibulatkan ke atas |
+| 30 Okt | "Mau masak X" lewat agen + usulan bertombol, bukan fitur terpisah | Satu agen, satu pola HITL; menghemat ±0,7 jam F4 |
