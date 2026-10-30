@@ -56,9 +56,19 @@ export interface Plan {
   missing: MissingItem[];
 }
 
+export interface PlanSummary {
+  store_names: string[];
+  items_covered: number;
+  goods: number;
+  extra_store_cost: number;
+  cost: number;
+}
+
 export interface Estimate {
   plan: Plan | null;
   best_single: Plan | null;
+  // Best plans first: every single store, then the best two-store plans.
+  alternatives: PlanSummary[];
   total: number;
   low: number;
   high: number;
@@ -190,9 +200,20 @@ export function computeEstimate(
     }
   }
 
+  const summarize = (p: Plan): PlanSummary => ({
+    store_names: p.store_names,
+    items_covered: p.items.length,
+    goods: p.goods,
+    extra_store_cost: p.extra_store_cost,
+    cost: p.cost,
+  });
+  // Pairs whose items all came from one store duplicate a single-store plan.
+  const realPairs = pairs.filter((p) => p.store_ids.length === 2).sort(better).slice(0, 3);
+
   return {
     plan,
     best_single: bestSingle,
+    alternatives: [...[...singles].sort(better), ...realPairs].map(summarize),
     total,
     low,
     high,
