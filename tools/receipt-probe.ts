@@ -14,7 +14,7 @@ if (!apiKey) {
 
 const args = process.argv.slice(2);
 const effortIdx = args.indexOf("--effort");
-const effort = effortIdx >= 0 ? args.splice(effortIdx, 2)[1] : "low";
+const effort = effortIdx >= 0 ? args.splice(effortIdx, 2)[1] : "minimal";
 if (args.length === 0) {
   console.error("Pass one or more receipt photos (jpg, png, webp).");
   process.exit(1);
@@ -39,7 +39,7 @@ for (const file of args) {
     const sum = r.lines.reduce((acc, l) => acc + (l.line_total ?? 0), 0);
     const low = r.lines.filter((l) => l.confidence !== "high").length;
     console.log(`\n${basename(file)}  (${result.model}, effort ${effort}, ${(result.latencyMs / 1000).toFixed(1)} s)`);
-    console.log(`  store ${r.store_name ?? "?"} ${r.store_branch ?? ""} | date ${r.purchase_date ?? "?"}`);
+    console.log(`  store ${r.store_name ?? "?"} / ${r.store_branch ?? "-"} (${r.store_kind}) | date ${r.purchase_date ?? "?"}`);
     console.log(`  lines ${r.lines.length} (${low} not high confidence) | sum ${rupiah(sum)} | printed total ${rupiah(r.total)} | ${sum === r.total ? "MATCH" : "MISMATCH"}`);
     console.log(`  tokens in ${result.usage.prompt_tokens} (cached ${result.usage.cached_tokens}) out ${result.usage.completion_tokens} (reasoning ${result.usage.reasoning_tokens})`);
     if (r.unreadable.length) console.log(`  unreadable: ${r.unreadable.join("; ")}`);

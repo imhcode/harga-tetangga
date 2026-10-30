@@ -17,9 +17,12 @@ export interface ReceiptLine {
   confidence: Confidence;
 }
 
+export type StoreKind = "minimarket" | "supermarket" | "grosir" | "warung" | "lainnya";
+
 export interface Receipt {
   store_name: string | null;
   store_branch: string | null;
+  store_kind: StoreKind;
   purchase_date: string | null;
   lines: ReceiptLine[];
   total: number | null;
@@ -40,6 +43,10 @@ Rules:
 - If a value cannot be read with certainty, use null and add a short note to "unreadable".
 - confidence: "high" when every value on the line is clearly legible, "medium" when one value is
   partly unclear, "low" when the name or a price is mostly guessed from context.
+- store_name is the chain or shop name only (for example "Indomaret", "Alfamart", "Toko Sumber Rejeki").
+  store_branch is the branch name only, without street address, or null.
+- store_kind: "minimarket" for convenience chains (Indomaret, Alfamart, Alfamidi), "supermarket",
+  "grosir" for wholesalers, "warung" for small neighbourhood shops, "lainnya" for anything else (cafe, restaurant).
 - purchase_date uses YYYY-MM-DD. total is the grand total the customer paid, before change and payment lines.
 - Ignore payment, change, tax summary, member, card and loyalty lines. Do not copy personal data.`;
 
@@ -49,10 +56,11 @@ const nullableString = { type: ["string", "null"] };
 export const RECEIPT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["store_name", "store_branch", "purchase_date", "lines", "total", "unreadable"],
+  required: ["store_name", "store_branch", "store_kind", "purchase_date", "lines", "total", "unreadable"],
   properties: {
     store_name: nullableString,
     store_branch: nullableString,
+    store_kind: { type: "string", enum: ["minimarket", "supermarket", "grosir", "warung", "lainnya"] },
     purchase_date: nullableString,
     lines: {
       type: "array",
@@ -96,7 +104,8 @@ export async function extractReceipt(
   const started = Date.now();
   const completion = await chatCompletion(apiKey, {
     model: opts.model ?? RECEIPT_MODEL,
-    reasoning_effort: opts.reasoningEffort ?? "low",
+    // minimal matched low on every value in the 30 Oct probe and was about 2x faster.
+    reasoning_effort: opts.reasoningEffort ?? "minimal",
     // Reasoning tokens count against this limit, so keep it generous or the JSON gets cut off.
     max_completion_tokens: 16000,
     messages: [
