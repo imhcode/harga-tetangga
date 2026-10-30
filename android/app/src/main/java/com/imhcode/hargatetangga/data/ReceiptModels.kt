@@ -84,3 +84,15 @@ data class LatestPrice(
     @SerialName("observed_on") val observedOn: String,
     val source: String = "receipt",
 )
+
+// F4-05: one photo sent to the model, as recorded by extract-receipt.
+@Serializable
+data class SentLogRow(
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("sent_bytes") val sentBytes: Int? = null,
+    @SerialName("sent_width") val sentWidth: Int? = null,
+    @SerialName("sent_height") val sentHeight: Int? = null,
+    val redactions: Int = 0,
+    val model: String? = null,
+    val status: String = "draft",
+)

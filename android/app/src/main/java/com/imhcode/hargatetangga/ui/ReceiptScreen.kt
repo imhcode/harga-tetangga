@@ -1,7 +1,16 @@
 package com.imhcode.hargatetangga.ui
 
-import android.graphics.BitmapFactory
 import android.net.Uri
+import com.imhcode.hargatetangga.data.ReceiptRepository
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.Canvas
+import android.graphics.RectF
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,8 +47,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun ReceiptScreen(onShowPrices: () -> Unit, vm: ReceiptViewModel = viewModel()) {
@@ -79,10 +86,19 @@ fun ReceiptScreen(onShowPrices: () -> Unit, vm: ReceiptViewModel = viewModel()) 
 
         is ReceiptState.Preview -> Centered {
             Text("Kirim foto ini?", style = MaterialTheme.typography.headlineSmall)
-            Thumbnail(state.uri)
             Text(
-                "Foto dikirim ke Meta AI untuk dibaca. Pastikan tidak ada kartu, nomor member, atau data pribadi lain yang terlihat.",
+                "Geser jari di atas nama, nomor member, atau nomor kartu untuk menutupnya dengan kotak hitam. Bagian itu tidak ikut terkirim.",
                 style = MaterialTheme.typography.bodyMedium,
+            )
+            RedactableThumbnail(state.uri, vm.redactions)
+            if (vm.redactions.isNotEmpty()) {
+                TextButton(onClick = { vm.redactions.removeAt(vm.redactions.lastIndex) }) {
+                    Text("Batalkan kotak terakhir (${vm.redactions.size} ditutup)")
+                }
+            }
+            Text(
+                "Foto dikirim ke Meta AI untuk dibaca, lalu dihapus dari HP setelah disimpan.",
+                style = MaterialTheme.typography.bodySmall,
             )
             Button(onClick = { vm.send(state.uri) }, modifier = Modifier.fillMaxWidth()) { Text("Kirim ke AI") }
             OutlinedButton(onClick = { vm.reset() }, modifier = Modifier.fillMaxWidth()) { Text("Ganti foto") }
@@ -144,24 +160,62 @@ private fun Centered(content: @Composable () -> Unit) {
     ) { content() }
 }
 
+// F4-05: preview of the upright photo; drag to add a black box that is painted into the upload.
 @Composable
-private fun Thumbnail(uri: Uri) {
+private fun RedactableThumbnail(uri: Uri, boxes: MutableList<RectF>) {
     val context = LocalContext.current
     val bitmap by produceState<ImageBitmap?>(null, uri) {
-        value = withContext(Dispatchers.IO) {
-            runCatching {
-                val options = BitmapFactory.Options().apply { inSampleSize = 4 }
-                context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
-                    ?.asImageBitmap()
-            }.getOrNull()
-        }
+        value = runCatching { ReceiptRepository.decodeUpright(context, uri, 1200).asImageBitmap() }.getOrNull()
     }
-    bitmap?.let {
-        Image(
-            bitmap = it,
-            contentDescription = "Foto struk",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
-        )
+    val image = bitmap ?: return
+    var dragStart by remember { mutableStateOf<Offset?>(null) }
+    var dragNow by remember { mutableStateOf<Offset?>(null) }
+    Box(
+        Modifier
+            .heightIn(max = 460.dp)
+            .aspectRatio(image.width.toFloat() / image.height, matchHeightConstraintsFirst = true),
+    ) {
+        Image(bitmap = image, contentDescription = "Foto struk", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+        Canvas(
+            Modifier.fillMaxSize().pointerInput(uri) {
+                detectDragGestures(
+                    onDragStart = { dragStart = it; dragNow = it },
+                    onDrag = { change, _ -> dragNow = change.position },
+                    onDragEnd = {
+                        val a = dragStart
+                        val b = dragNow
+                        if (a != null && b != null) {
+                            val box = RectF(
+                                (minOf(a.x, b.x) / size.width).coerceIn(0f, 1f),
+                                (minOf(a.y, b.y) / size.height).coerceIn(0f, 1f),
+                                (maxOf(a.x, b.x) / size.width).coerceIn(0f, 1f),
+                                (maxOf(a.y, b.y) / size.height).coerceIn(0f, 1f),
+                            )
+                            // Ignore accidental taps.
+                            if (box.width() > 0.02f && box.height() > 0.01f) boxes.add(box)
+                        }
+                        dragStart = null
+                        dragNow = null
+                    },
+                )
+            },
+        ) {
+            boxes.forEach { b ->
+                drawRect(
+                    color = Color.Black,
+                    topLeft = Offset(b.left * size.width, b.top * size.height),
+                    size = Size(b.width() * size.width, b.height() * size.height),
+                )
+            }
+            val a = dragStart
+            val b = dragNow
+            if (a != null && b != null) {
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    topLeft = Offset(minOf(a.x, b.x), minOf(a.y, b.y)),
+                    size = Size(kotlin.math.abs(a.x - b.x), kotlin.math.abs(a.y - b.y)),
+                )
+            }
+        }
     }
 }

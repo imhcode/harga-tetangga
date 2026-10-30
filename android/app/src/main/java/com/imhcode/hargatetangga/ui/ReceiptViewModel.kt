@@ -1,6 +1,7 @@
 package com.imhcode.hargatetangga.ui
 
 import android.app.Application
+import android.graphics.RectF
 import android.net.Uri
 import android.os.SystemClock
 import androidx.compose.runtime.getValue
@@ -158,7 +159,11 @@ class ReceiptViewModel(app: Application) : AndroidViewModel(app) {
         return FileProvider.getUriForFile(app, "${app.packageName}.fileprovider", file)
     }
 
+    // F4-05: areas the person blacked out on the preview, as fractions (0..1) of the upright photo.
+    val redactions = mutableStateListOf<RectF>()
+
     fun onPhoto(uri: Uri) {
+        redactions.clear()
         state = ReceiptState.Preview(uri)
     }
 
@@ -167,7 +172,7 @@ class ReceiptViewModel(app: Application) : AndroidViewModel(app) {
         state = ReceiptState.Reading(uri)
         viewModelScope.launch {
             try {
-                val image = ReceiptRepository.encodeReceiptImage(getApplication(), uri)
+                val image = ReceiptRepository.encodeReceiptImage(getApplication(), uri, redactions.toList())
                 val draft = ReceiptRepository.extract(image)
                 store = draft.store
                 purchaseDate = draft.purchaseDate ?: ""
@@ -296,6 +301,7 @@ class ReceiptViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun reset() {
+        redactions.clear()
         tripLines.clear()
         clearPhotos()
         edits.clear()

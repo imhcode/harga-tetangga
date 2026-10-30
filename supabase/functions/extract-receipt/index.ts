@@ -172,6 +172,11 @@ Deno.serve(async (req) => {
       effort,
       escalated,
       extract_ms: extractMs,
+      // Egress log (F4-05): what this photo looked like when it left the phone.
+      sent_bytes: Math.floor(imageBase64.length * 3 / 4),
+      sent_width: Number.isInteger(body?.width) ? body.width : null,
+      sent_height: Number.isInteger(body?.height) ? body.height : null,
+      redactions: Number.isInteger(body?.redactions) ? Math.max(0, body.redactions) : 0,
     }).select("id").single();
     if (draft.error) throw draft.error;
 

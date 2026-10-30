@@ -18,6 +18,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import com.imhcode.hargatetangga.data.SentLogRow
+import com.imhcode.hargatetangga.data.ReceiptRepository
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -190,6 +193,40 @@ fun AccountScreen() {
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
+        SentLog()
+
         TextButton(onClick = { scope.launch { Supa.client.auth.signOut() } }) { Text("Keluar") }
     }
 }
+
+// F4-05: every photo that left the phone, so the person can see what was shared with the model.
+@Composable
+private fun SentLog() {
+    val rows by produceState<List<SentLogRow>?>(null) {
+        value = runCatching { ReceiptRepository.sentLog() }.getOrDefault(emptyList())
+    }
+    Text("Foto yang dikirim ke AI", style = MaterialTheme.typography.titleMedium)
+    Text(
+        "Hanya foto struk yang kamu kirim, setelah bagian yang kamu tutup dihitamkan. Model: Meta Muse, mode Standard (tidak dipakai melatih model).",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    when {
+        rows == null -> CircularProgressIndicator()
+        rows!!.isEmpty() -> Text("Belum ada foto yang dikirim.", style = MaterialTheme.typography.bodyMedium)
+        else -> rows!!.forEach { r ->
+            Text(
+                "${localTime(r.createdAt)} · ${r.sentBytes?.let { "${it / 1024} KB" } ?: "?"}" +
+                    (if (r.sentWidth != null) " · ${r.sentWidth}×${r.sentHeight}" else "") +
+                    " · ${r.redactions} area ditutup · ${if (r.status == "verified") "disimpan" else "tidak disimpan"}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+// Supabase returns UTC timestamps; show them in the phone's time zone.
+private fun localTime(timestamp: String): String = runCatching {
+    java.time.OffsetDateTime.parse(timestamp)
+        .atZoneSameInstant(java.time.ZoneId.systemDefault())
+        .format(java.time.format.DateTimeFormatter.ofPattern("d MMM HH:mm", java.util.Locale("id", "ID")))
+}.getOrDefault(timestamp)
