@@ -104,10 +104,12 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 | F1-11 | Script ukur akurasi baris dan waktu per struk, dicatat ke `metrics/` | Angka akurasi keluar untuk 10 struk | C | 0,4 |
 
 **Gerbang HITL F1**
-- [ ] Tiga struk nyata dari dua toko berbeda selesai e2e di HP
-- [ ] Koreksi satu nama barang, lalu foto struk lain dengan barang yang sama: alias terpakai otomatis
-- [ ] Akurasi baris pada 10 struk tercatat. Ambang: ≥85% target, <60% pivot
-- [ ] Waktu dari foto sampai tersimpan dicatat
+- [ ] Tiga struk nyata dari dua toko berbeda selesai e2e di HP. Di MuMu: 1 struk uji (bukan struk Kudus) selesai foto → Review → simpan → tab Harga
+- [ ] Koreksi satu nama barang, lalu foto struk lain dengan barang yang sama: alias terpakai otomatis. Sebagian terbukti: struk yang sama dikirim ulang, 7/9 baris diterima otomatis lewat alias; 2 sisanya tetap dibuka karena AI kurang yakin membaca. Uji dengan koreksi nama belum
+- [ ] Akurasi baris pada 10 struk tercatat. Ambang: ≥85% target, <60% pivot. Alat siap: `tools/accuracy.ts` (ground truth, `--init` lalu koreksi tangan) dan `tools/metrics.sql` (dari pemakaian nyata). Baru 3 struk uji
+- [x] Waktu dari foto sampai tersimpan dicatat. Kolom `extract_ms` dan `verify_ms` di tabel `receipts`; struk pertama 13,7 s baca, struk dengan alias 7,0 s
+
+**Status F1 (30 Okt):** semua item kode selesai, ter-deploy, dan diuji e2e di MuMu. Tersisa F1-10 (ground truth 10 struk milik sendiri, oleh kamu) dan gerbang di HP fisik.
 
 **Jika gagal:** akurasi <60% → perkuat layar Review dan persempit katalog, F4 dipotong lebih dulu. Latensi >30 detik → coba `stream: true` atau turunkan reasoning.
 
@@ -256,3 +258,7 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 | 30 Okt | Commit langsung ke `main`, push setiap perubahan | Permintaan pemilik; proyek solo |
 | 30 Okt | MuMu Player untuk uji harian, HP fisik untuk gerbang | Lebih cepat; gerbang tetap di perangkat nyata |
 | 30 Okt | Edge Function wajib memeriksa user login, bukan hanya JWT gateway | Anon key ada di APK dan bisa dipakai siapa saja |
+| 30 Okt | Ekstraksi default `minimal`; baca ulang `low` hanya jika angka tidak cocok (total, harga hilang, jumlah × harga) | Probe: `minimal` sama akurat, ±2× lebih cepat. Ragu saja cukup dibuka di Review |
+| 30 Okt | Kamera sistem + pemilih galeri, bukan CameraX | Lebih cepat dibuat; galeri perlu untuk uji di emulator |
+| 30 Okt | Katalog tumbuh dari struk yang dikonfirmasi; tanpa seed 50 produk | Tidak mengarang SKU; model mengusulkan, manusia mengonfirmasi |
+| 30 Okt | Seluruh katalog masuk prompt pencocokan; `pg_trgm` shortlist ditunda | Katalog masih kecil; indeks trigram sudah ada untuk nanti |
