@@ -91,6 +91,42 @@ Deno.serve(async (req) => {
         hemat: e.savings ? { jumlah: e.savings.amount, dibanding: e.savings.versus_store } : null,
       };
     },
+
+    // F4-04: what was actually bought, from confirmed receipts only.
+    async riwayat_pembelian({ nama, hari }) {
+      const since = new Date(Date.parse(today) - hari * DAY_MS).toISOString().slice(0, 10);
+      const [obs, receipts] = await Promise.all([
+        db.from("price_observations")
+          .select("observed_on,quantity,unit_price,line_total,products(name),stores(name,branch)")
+          .gte("observed_on", since).order("observed_on", { ascending: false }).limit(500),
+        db.from("receipts").select("purchase_date,printed_total").eq("status", "verified").gte("purchase_date", since),
+      ]);
+      if (obs.error) throw obs.error;
+      if (receipts.error) throw receipts.error;
+
+      // deno-lint-ignore no-explicit-any
+      let rows = (obs.data ?? []).map((o: any) => ({
+        tanggal: o.observed_on,
+        toko: [o.stores?.name, o.stores?.branch].filter(Boolean).join(" "),
+        barang: o.products?.name ?? "?",
+        jumlah: o.quantity == null ? null : Number(o.quantity),
+        harga_satuan: Number(o.unit_price),
+        total: o.line_total == null ? null : Number(o.line_total),
+      }));
+      if (nama) {
+        const words = nama.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+        rows = rows.filter((r) => words.some((w) => r.barang.toLowerCase().includes(w)));
+      }
+      return {
+        hari_ini: today,
+        sejak: since,
+        jumlah_struk: receipts.data?.length ?? 0,
+        total_dibayar_semua_struk: (receipts.data ?? []).reduce((acc, r) => acc + Number(r.printed_total ?? 0), 0),
+        pembelian: rows.slice(0, 30),
+        jumlah_baris: rows.length,
+        catatan: rows.length === 0 ? "belum ada pembelian yang tercatat untuk periode ini" : undefined,
+      };
+    },
   };
 
   try {

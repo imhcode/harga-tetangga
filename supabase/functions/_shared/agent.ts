@@ -14,6 +14,7 @@ export interface ToolExecutors {
   cari_harga(args: { nama: string }): Promise<unknown>;
   hitung_estimasi(args: { persen_cadangan?: number }): Promise<unknown>;
   bandingkan_toko(args: Record<string, never>): Promise<unknown>;
+  riwayat_pembelian(args: { nama?: string; hari: number }): Promise<unknown>;
 }
 
 export interface ChatTurn {
@@ -33,7 +34,8 @@ Aturan:
 - Setiap angka harga atau rupiah HARUS berasal dari hasil tool di percakapan ini. Jangan pernah menebak atau mengarang harga.
 - Saat menyebut harga, sebut tokonya dan umur harganya (misalnya "di Indomaret, 3 hari lalu").
 - Kalau barang belum ada data harga, katakan terus terang "belum ada data harga" dan sarankan memotret struk saat membelinya.
-- Pertanyaan "bawa uang berapa" atau "habis berapa": panggil hitung_estimasi. "Belanja di mana" atau "toko mana paling murah": panggil bandingkan_toko. Harga satu barang: panggil cari_harga.
+- Pertanyaan "bawa uang berapa" untuk daftar saat ini: panggil hitung_estimasi.
+- Pertanyaan tentang pembelian yang sudah terjadi ("kapan terakhir beli minyak", "bulan ini habis berapa", "berapa kali beli telur"): panggil riwayat_pembelian. "Belanja di mana" atau "toko mana paling murah": panggil bandingkan_toko. Harga satu barang: panggil cari_harga.
 - Kamu tidak bisa mengubah daftar belanja. Kalau ada barang yang perlu ditambahkan (misalnya bahan untuk menu yang ingin dimasak), panggil usulkan_tambah_barang sekali untuk setiap barang. Pengguna yang memutuskan lewat tombol. Jangan usulkan bumbu dapur yang biasanya sudah ada kecuali diminta; sebut saja di jawaban sebagai "kalau belum ada di rumah".
 - Kamu pencatat dan pembanding harga, bukan penasihat keuangan. Jangan memberi saran investasi, pinjaman, atau kredit.
 - Format rupiah seperti "Rp 75.400".
@@ -70,6 +72,20 @@ const TOOLS = [
       name: "bandingkan_toko",
       description: "Bandingkan biaya daftar belanja saat ini di setiap toko dan kombinasi dua toko, termasuk biaya tambahan per toko.",
       parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "riwayat_pembelian",
+      description: "Riwayat pembelian dari struk yang sudah diperiksa: tanggal, toko, barang, jumlah, dan harga, ditambah total belanja per periode. Bisa disaring dengan nama barang.",
+      parameters: {
+        type: "object",
+        properties: {
+          nama: { type: "string", description: "Nama barang untuk disaring, kosongkan untuk semua barang" },
+          hari: { type: "number", description: "Berapa hari ke belakang, default 30, maksimal 365" },
+        },
+      },
     },
   },
   {
@@ -167,6 +183,14 @@ async function execute(
     }
     case "bandingkan_toko":
       return await tools.bandingkan_toko({});
+    case "riwayat_pembelian": {
+      const nama = typeof args.nama === "string" ? args.nama.trim().slice(0, 80) : "";
+      const hari = Number(args.hari);
+      return await tools.riwayat_pembelian({
+        nama: nama || undefined,
+        hari: Number.isFinite(hari) ? Math.min(365, Math.max(1, Math.round(hari))) : 30,
+      });
+    }
     case "usulkan_tambah_barang": {
       const label = typeof args.label === "string" ? args.label.trim().slice(0, 80) : "";
       if (!label) return { error: "label wajib diisi" };
