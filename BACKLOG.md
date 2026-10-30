@@ -72,10 +72,12 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 | F0-07 | Tombol "Tes AI" memanggil `ping-model` | Jawaban tampil di HP fisik | C | 0,4 |
 
 **Gerbang HITL F0**
-- [ ] Jawaban Spark tampil di HP fisik, bukan emulator
-- [ ] Cari string `LLM_` di APK dan repo: tidak ditemukan
-- [ ] Official Rules tidak melarang pendekatan ini
-- [ ] F0-03 menunjukkan struk Indonesia bisa dibaca
+- [ ] Jawaban Spark tampil di HP fisik, bukan emulator. Di MuMu sudah jalan (30 Okt: "Beras adalah kebutuhan pokok dapur.", muse-spark-1.3, 1.828 ms); HP fisik belum
+- [x] Cari string `LLM_` di APK dan repo: tidak ditemukan (30 Okt)
+- [ ] Official Rules tidak melarang pendekatan ini. Ringkasan aturan ada di IDEA.md (kode baru selama acara, repo publik tanpa rahasia dan struk asli); tunggu konfirmasimu
+- [ ] F0-03 menunjukkan struk Indonesia bisa dibaca. Script siap (`tools/receipt-probe.ts`), belum dijalankan pada struk nyata
+
+**Status F0 (30 Okt):** F0-02, F0-04 sampai F0-07 selesai. Supabase project `oytzkvclenotyjvqwpkb` (ap-southeast-2), `ping-model` ter-deploy dan menolak anon key, sehingga hanya user yang login bisa memakai kredit Meta.
 
 **Jika gagal:** akses API ditolak → hubungi panitia hari itu juga, dan lanjutkan F1 dengan Edge Function yang mengembalikan JSON contoh dari F0-03 agar UI tetap maju. Android tidak berjalan dalam 1,5 jam → putuskan di Log keputusan apakah tetap Kotlin.
 
@@ -251,4 +253,6 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 |---|---|---|
 | 27 Okt | Android native Kotlin + Compose, Supabase, PRD berbahasa Indonesia | Sesi tanya-jawab PRD |
 | 30 Okt | Backlog e2e per fase dengan gerbang HITL; F5 di bawah garis potong | Belum ada kode, ±24 jam tersisa |
-| | | |
+| 30 Okt | Commit langsung ke `main`, push setiap perubahan | Permintaan pemilik; proyek solo |
+| 30 Okt | MuMu Player untuk uji harian, HP fisik untuk gerbang | Lebih cepat; gerbang tetap di perangkat nyata |
+| 30 Okt | Edge Function wajib memeriksa user login, bukan hanya JWT gateway | Anon key ada di APK dan bisa dipakai siapa saja |
