@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Receipt photos taken with the camera stay in app cache; they are not kept after reading. -->
+    <cache-path name="receipts" path="receipts/" />
+</paths>

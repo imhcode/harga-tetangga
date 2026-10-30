@@ -49,7 +49,7 @@ fun AppRoot() {
     }
     val status by Supa.client.auth.sessionStatus.collectAsState()
     when (status) {
-        is SessionStatus.Authenticated -> PingScreen()
+        is SessionStatus.Authenticated -> MainScreen()
         is SessionStatus.Initializing -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -126,8 +126,9 @@ private fun LoginScreen() {
     }
 }
 
+// Account tab: the F0 connection test and sign-out.
 @Composable
-private fun PingScreen() {
+fun AccountScreen() {
     var prompt by rememberSaveable { mutableStateOf("Sebutkan satu kebutuhan pokok dapur.") }
     var result by remember { mutableStateOf<PingResult?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -135,10 +136,11 @@ private fun PingScreen() {
     val scope = rememberCoroutineScope()
 
     Column(
-        Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Tes AI", style = MaterialTheme.typography.headlineMedium)
+        Text("Akun", style = MaterialTheme.typography.headlineMedium)
+        Text("Tes AI", style = MaterialTheme.typography.titleMedium)
         Text(
             "Tombol ini memanggil Muse Spark lewat server Supabase. Kunci API tidak tersimpan di HP.",
             style = MaterialTheme.typography.bodyMedium,
