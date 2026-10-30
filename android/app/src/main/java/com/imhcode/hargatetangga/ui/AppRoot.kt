@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,12 +49,21 @@ fun AppRoot() {
         return
     }
     val status by Supa.client.auth.sessionStatus.collectAsState()
-    when (status) {
-        is SessionStatus.Authenticated -> MainScreen()
-        is SessionStatus.Initializing -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+    // Auth re-emits Initializing whenever the app returns to the foreground (for example from the
+    // photo picker). Swapping MainScreen out then would drop the picker's result, so only an
+    // explicit sign-in or sign-out changes what is shown.
+    var signedIn by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(status) {
+        when (status) {
+            is SessionStatus.Authenticated -> signedIn = true
+            is SessionStatus.NotAuthenticated -> signedIn = false
+            else -> Unit
         }
-        else -> LoginScreen()
+    }
+    when (signedIn) {
+        true -> MainScreen()
+        false -> LoginScreen()
+        null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
     }
 }
 

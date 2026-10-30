@@ -40,7 +40,7 @@ Rules:
 - raw_name is the product name exactly as printed, including abbreviations and capitals.
 - source_text is the full printed text of that line (name, quantity, prices) copied character by character.
 - quantity is the number of units bought. For items sold by weight, use the printed weight.
-- If a value cannot be read with certainty, use null and add a short note to "unreadable".
+- If a value cannot be read with certainty, use null and add a short note in Indonesian to "unreadable".
 - confidence: "high" when every value on the line is clearly legible, "medium" when one value is
   partly unclear, "low" when the name or a price is mostly guessed from context.
 - store_name is the chain or shop name only (for example "Indomaret", "Alfamart", "Toko Sumber Rejeki").
