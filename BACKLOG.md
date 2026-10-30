@@ -206,8 +206,15 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 | F5-04 | Tandai barang atau kategori sebagai penting | Filter bekerja | C | 0,2 |
 
 **Gerbang HITL F5**
-- [ ] HP istri bergabung ke rumah tangga lewat kode dan melihat harga dari struk kamu
-- [ ] Foto struk milik orang lain tidak bisa dibuka
+- [ ] HP istri bergabung ke rumah tangga lewat kode dan melihat harga dari struk kamu. Rumah tangga sudah dibuat untuk akunmu (kode **4D67D0**); sisi anggota butuh akun kedua yang dibuat sendiri oleh istri
+- [ ] Foto struk milik orang lain tidak bisa dibuka. RLS `receipts` tetap per pemilik (dicek di `pg_policies`); belum diuji dengan akun kedua
+
+**Status F5 (30 Okt):** F5-01 sampai F5-04 selesai, ter-deploy, dan di-push.
+- Data harga, produk, toko, daftar, estimasi, dan trip dibagi ke anggota aktif lewat `household_peers()`; struk tetap pribadi
+- Gabung lewat kode membuat permintaan "menunggu"; hanya pemilik yang bisa menyetujui (H7). Fungsi rumah tangga hanya bisa dipanggil user yang login
+- `confirm_receipt` memakai ulang toko dan produk yang sudah disimpan anggota lain, jadi katalog tidak dobel
+- Tab Laporan: total bulan ini, per kategori (batang), per barang, bintang "penting" + filter. Diuji di MuMu dengan struk uji bertanggal hari ini
+- Belum teruji: alur anggota (minta gabung, disetujui, melihat data bersama) karena butuh akun kedua
 
 ---
 
@@ -281,3 +288,5 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 | 30 Okt | Wonder hanya tingkat terakhir kaskade, dipakai bila dua bacaan Spark masih tidak konsisten | Pada struk jelas semua tingkat 100%; Wonder ±6× biaya Spark minimal |
 | 30 Okt | Suara: rekam lalu kirim (endpoint file, `PUSH_TO_TALK`), bukan streaming | Daftar belanja pendek; tanpa proxy WebSocket |
 | 30 Okt | Privasi: pengguna menutup area sendiri, tidak ada deteksi otomatis | Sederhana, bisa dijelaskan, dan keputusan tetap di manusia |
+| 30 Okt | Rumah tangga: satu orang satu rumah tangga, anggota keluarga melihat dan mengubah data bersama, struk tetap pribadi | Keluarga saling percaya; struk bisa memuat data pribadi |
+| 30 Okt | Laporan dihitung dari harga barang (sebelum diskon), bukan total struk | Struk anggota lain pribadi; harga barang tersedia untuk semua anggota |

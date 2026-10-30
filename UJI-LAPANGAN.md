@@ -5,7 +5,7 @@ Untuk gerbang F1–F3 di [BACKLOG.md](BACKLOG.md). Semua langkah di sini dikerja
 ## 1. Persiapan (sekali)
 
 1. **Pasang APK di HP fisik.** File: `android/app/build/outputs/apk/debug/app-debug.apk`. Kirim ke HP (kabel, Google Drive, atau WhatsApp ke diri sendiri), lalu izinkan "instal dari sumber ini".
-2. **Pakai akun yang sama untuk kamu dan istri** sampai F5 (keluarga) dibangun. Data saat ini milik satu akun; akun kedua akan melihat daftar kosong.
+2. **Gabungkan akun istri ke rumah tangga.** Istri mendaftar akunnya sendiri, lalu di tab Akun memasukkan kode undangan dari HP-mu dan menekan **Minta gabung**. Kamu menekan **Setujui** di tab Akun. Setelah itu harga, daftar belanja, dan hasil belanja dipakai bersama; struk tetap pribadi.
 3. **Data uji sudah dihapus** (30 Okt): toko, produk, alias, struk, harga, daftar, estimasi, dan trip uji. Akun login tetap. Semua data mulai sekarang berasal dari belanja nyata.
 
 ## 2. Satu trip belanja (F3-04)
