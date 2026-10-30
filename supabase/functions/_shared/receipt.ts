@@ -4,6 +4,8 @@
 import { chatCompletion } from "./meta.ts";
 
 export const RECEIPT_MODEL = "muse-spark-1.3";
+// Preview model with stronger reasoning; used only when Spark's numbers still do not add up.
+export const WONDER_MODEL = "muse-wonder-1.0";
 
 export type Confidence = "high" | "medium" | "low";
 

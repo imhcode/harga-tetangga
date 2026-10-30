@@ -1,10 +1,10 @@
 // F0-03: runs receipt extraction on local photos and reports what came back.
-// Usage: node --env-file=.env tools/receipt-probe.ts receipts/a.jpg receipts/b.jpg [--effort low]
-// Output JSON goes to receipts/out/ (gitignored: real receipts never enter the repo).
+// Usage: node --env-file=.env tools/receipt-probe.ts receipts/a.jpg receipts/b.jpg [--effort low] [--model muse-wonder-1.0] [--out receipts/out-wonder]
+// Output JSON goes to receipts/out/ by default (gitignored: real receipts never enter the repo).
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, extname, join } from "node:path";
-import { extractReceipt } from "../supabase/functions/_shared/receipt.ts";
+import { extractReceipt, RECEIPT_MODEL } from "../supabase/functions/_shared/receipt.ts";
 
 const apiKey = process.env.MODEL_API_KEY;
 if (!apiKey) {
@@ -13,15 +13,19 @@ if (!apiKey) {
 }
 
 const args = process.argv.slice(2);
-const effortIdx = args.indexOf("--effort");
-const effort = effortIdx >= 0 ? args.splice(effortIdx, 2)[1] : "minimal";
+const option = (name: string, fallback: string): string => {
+  const i = args.indexOf(name);
+  return i >= 0 ? args.splice(i, 2)[1] : fallback;
+};
+const effort = option("--effort", "minimal");
+const model = option("--model", RECEIPT_MODEL);
+const outDir = option("--out", join("receipts", "out"));
 if (args.length === 0) {
   console.error("Pass one or more receipt photos (jpg, png, webp).");
   process.exit(1);
 }
 
 const MIME: Record<string, string> = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
-const outDir = join("receipts", "out");
 await mkdir(outDir, { recursive: true });
 
 const rupiah = (n: number | null) => (n == null ? "?" : `Rp ${n.toLocaleString("id-ID")}`);
@@ -34,7 +38,7 @@ for (const file of args) {
   }
   const dataUrl = `data:${mime};base64,${(await readFile(file)).toString("base64")}`;
   try {
-    const result = await extractReceipt(apiKey, dataUrl, { reasoningEffort: effort });
+    const result = await extractReceipt(apiKey, dataUrl, { model, reasoningEffort: effort });
     const r = result.receipt;
     const sum = r.lines.reduce((acc, l) => acc + (l.line_total ?? 0), 0);
     const low = r.lines.filter((l) => l.confidence !== "high").length;

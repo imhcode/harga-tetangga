@@ -8,10 +8,17 @@ import { checkReceipt, isPriceJump, type LineFlag, normalizeRawName, unitPriceOf
 import { corsHeaders, json, modelApiKey, requireUser } from "../_shared/http.ts";
 import { type CatalogProduct, matchProducts, type NewProduct } from "../_shared/match.ts";
 import { MetaApiError } from "../_shared/meta.ts";
-import { extractReceipt } from "../_shared/receipt.ts";
+import { extractReceipt, RECEIPT_MODEL, WONDER_MODEL } from "../_shared/receipt.ts";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BASE64_CHARS = 12_000_000; // about 9 MB of image
+
+// minimal matched low on every value in the 30 Oct probe and is ~2x faster; Wonder is the costly last resort.
+const CASCADE = [
+  { model: RECEIPT_MODEL, effort: "minimal" },
+  { model: RECEIPT_MODEL, effort: "low" },
+  { model: WONDER_MODEL, effort: "low" },
+];
 
 interface StoreRow {
   id: string;
@@ -47,21 +54,24 @@ Deno.serve(async (req) => {
   try {
     const started = Date.now();
 
-    // 1. Read the photo. Read again with more reasoning only when the numbers do not add up.
-    let extraction = await extractReceipt(apiKey, dataUrl, { reasoningEffort: "minimal" });
-    let check = checkReceipt(extraction.receipt);
-    let effort = "minimal";
-    let escalated = false;
-    if (check.structuralIssues > 0) {
-      escalated = true;
-      const retry = await extractReceipt(apiKey, dataUrl, { reasoningEffort: "low" });
-      const retryCheck = checkReceipt(retry.receipt);
-      if (retryCheck.structuralIssues <= check.structuralIssues) {
-        extraction = retry;
-        check = retryCheck;
-        effort = "low";
+    // 1. Read the photo through the cascade (F4-01): cheap first, stronger only while the numbers
+    //    do not add up. The best read wins; every tier tried is kept for cost/accuracy measurement.
+    let extraction!: Awaited<ReturnType<typeof extractReceipt>>;
+    let check!: ReturnType<typeof checkReceipt>;
+    let effort = "";
+    const tiers: { model: string; effort: string; ms: number; structural_issues: number; usage: unknown }[] = [];
+    for (const tier of CASCADE) {
+      const result = await extractReceipt(apiKey, dataUrl, { model: tier.model, reasoningEffort: tier.effort });
+      const resultCheck = checkReceipt(result.receipt);
+      tiers.push({ model: tier.model, effort: tier.effort, ms: result.latencyMs, structural_issues: resultCheck.structuralIssues, usage: result.usage });
+      if (tiers.length === 1 || resultCheck.structuralIssues < check.structuralIssues) {
+        extraction = result;
+        check = resultCheck;
+        effort = tier.effort;
       }
+      if (check.structuralIssues === 0) break;
     }
+    const escalated = tiers.length > 1;
     const receipt = extraction.receipt;
 
     // 2. Store, catalog and confirmed aliases (all under the caller's row level security).
@@ -157,7 +167,7 @@ Deno.serve(async (req) => {
     const draft = await db.from("receipts").insert({
       purchase_date: purchaseDate,
       printed_total: receipt.total,
-      extraction: { receipt, usage: extraction.usage, matches: Object.fromEntries(matches) },
+      extraction: { receipt, usage: extraction.usage, tiers, matches: Object.fromEntries(matches) },
       model: extraction.model,
       effort,
       escalated,

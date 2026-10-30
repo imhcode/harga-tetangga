@@ -2,7 +2,7 @@
 //
 //   node tools/accuracy.ts --init            copy every receipts/out/*.json into receipts/truth/ as a starting point
 //   (correct receipts/truth/*.json by hand against the photo: this is the human-in-the-loop step)
-//   node tools/accuracy.ts                   compare receipts/out/ (latest probe run) with receipts/truth/
+//   node tools/accuracy.ts [--out DIR]       compare a probe run (default receipts/out/) with receipts/truth/
 //
 // A line counts as correct when kind, quantity, unit price and line total all match the truth.
 // Names are reported separately: an exact printed name is what lets an alias match next time.
@@ -13,7 +13,8 @@ import { join } from "node:path";
 import { normalizeRawName, unitPriceOf } from "../supabase/functions/_shared/checks.ts";
 import type { Receipt, ReceiptLine } from "../supabase/functions/_shared/receipt.ts";
 
-const OUT = join("receipts", "out");
+const outFlag = process.argv.indexOf("--out");
+const OUT = outFlag >= 0 ? process.argv[outFlag + 1] : join("receipts", "out");
 const TRUTH = join("receipts", "truth");
 
 const readReceipt = async (path: string): Promise<Receipt> => {
