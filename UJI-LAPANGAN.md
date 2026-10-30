@@ -6,7 +6,7 @@ Untuk gerbang F1–F3 di [BACKLOG.md](BACKLOG.md). Semua langkah di sini dikerja
 
 1. **Pasang APK di HP fisik.** File: `android/app/build/outputs/apk/debug/app-debug.apk`. Kirim ke HP (kabel, Google Drive, atau WhatsApp ke diri sendiri), lalu izinkan "instal dari sumber ini".
 2. **Pakai akun yang sama untuk kamu dan istri** sampai F5 (keluarga) dibangun. Data saat ini milik satu akun; akun kedua akan melihat daftar kosong.
-3. **Data uji di database.** Saat ini ada harga dari struk uji (Toko Uji Tlogomas 2022, Indomaret GBA Ciganitri 2024) dan satu trip uji. Harga itu akan ikut muncul di estimasi. Putuskan sebelum uji pertama: hapus dulu, atau biarkan.
+3. **Data uji sudah dihapus** (30 Okt): toko, produk, alias, struk, harga, daftar, estimasi, dan trip uji. Akun login tetap. Semua data mulai sekarang berasal dari belanja nyata.
 
 ## 2. Satu trip belanja (F3-04)
 
