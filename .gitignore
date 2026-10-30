@@ -1,0 +1,35 @@
+# Secrets (the repo is public)
+.env
+.env.*
+!.env.example
+local.properties
+secrets.properties
+*.jks
+*.keystore
+supabase/.env
+supabase/functions/.env
+
+# Real receipts and personal data never go into the repo
+receipts/
+data/private/
+
+# Android / Gradle
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.iml
+.idea/
+.kotlin/
+
+# Node / tooling
+node_modules/
+supabase/.temp/
+supabase/.branches/
+
+# OS
+.DS_Store
+Thumbs.db
