@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
@@ -26,6 +27,7 @@ private val TABS = listOf(
     Tab("Belanja", Icons.Filled.ShoppingCart),
     Tab("Struk", Icons.Filled.Add),
     Tab("Harga", Icons.AutoMirrored.Filled.List),
+    Tab("Laporan", Icons.Filled.DateRange),
     Tab("Akun", Icons.Filled.Person),
 )
 
@@ -51,6 +53,7 @@ fun MainScreen() {
                 0 -> ShoppingScreen()
                 1 -> ReceiptScreen(onShowPrices = { tab = 2 })
                 2 -> PricesScreen()
+                3 -> ReportScreen()
                 else -> AccountScreen()
             }
         }
