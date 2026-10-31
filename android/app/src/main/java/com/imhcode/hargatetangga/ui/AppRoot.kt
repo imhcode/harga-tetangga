@@ -31,6 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,12 @@ fun AppRoot() {
             "Supabase belum dikonfigurasi",
             "Isi SUPABASE_URL dan SUPABASE_ANON_KEY di android/local.properties, lalu build ulang.",
         )
+        return
+    }
+    val context = LocalContext.current
+    var accepted by rememberSaveable { mutableStateOf(onboardingAccepted(context)) }
+    if (!accepted) {
+        OnboardingScreen(context) { accepted = true }
         return
     }
     val status by Supa.client.auth.sessionStatus.collectAsState()
@@ -196,6 +203,9 @@ fun AccountScreen() {
         HouseholdSection()
 
         SentLog()
+
+        Text("Privasi", style = MaterialTheme.typography.titleMedium)
+        PRIVACY_POINTS.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
 
         TextButton(onClick = { scope.launch { Supa.client.auth.signOut() } }) { Text("Keluar") }
     }
