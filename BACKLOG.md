@@ -233,8 +233,15 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 
 **Gerbang HITL F6**
 - [ ] Alur demo lengkap jalan dari instalasi baru di HP yang belum pernah dipakai
-- [ ] Angka di video dan README sama dengan tabel metrik
+- [ ] Angka di video dan README sama dengan tabel metrik. README sudah memuat angka uji kecil dengan ukuran sampelnya; angka uji lapangan belum ada
 - [ ] Bukti submit tersimpan
+
+**Status F6 (31 Okt):**
+- F6-01 onboarding (ringkasan privasi, centang 18+, label AI, juga di tab Akun): selesai dan terkompilasi; **belum dicoba di emulator** karena MuMu mati
+- F6-02 APK rilis 9,2 MB di `android/app/build/outputs/apk/release/app-release.apk`, ditandatangani kunci debug. Kunci rilis sungguhan dibuat sendiri olehmu dengan `keytool` (lihat `android/keystore.properties.example`); tidak wajib untuk demo
+- F6-03 README bahasa Inggris untuk juri: selesai
+- F6-04 naskah video 3 menit + daftar cek izin dan privasi: [VIDEO.md](VIDEO.md), menunggu persetujuanmu
+- F6-05/06 rekam video dan submit: tugasmu
 
 ---
 
@@ -290,3 +297,5 @@ Catatan: urutan potong F5 berbeda dari PRD bagian 10, yang menaruh akun keluarga
 | 30 Okt | Privasi: pengguna menutup area sendiri, tidak ada deteksi otomatis | Sederhana, bisa dijelaskan, dan keputusan tetap di manusia |
 | 30 Okt | Rumah tangga: satu orang satu rumah tangga, anggota keluarga melihat dan mengubah data bersama, struk tetap pribadi | Keluarga saling percaya; struk bisa memuat data pribadi |
 | 30 Okt | Laporan dihitung dari harga barang (sebelum diskon), bukan total struk | Struk anggota lain pribadi; harga barang tersedia untuk semua anggota |
+| 31 Okt | Narasi video bahasa Inggris, layar aplikasi bahasa Indonesia dengan teks terjemahan | Juri internasional; aplikasinya untuk pengguna Indonesia |
+| 31 Okt | APK rilis memakai kunci debug kecuali `keystore.properties` ada | Kunci penandatanganan adalah kredensial milikmu; dibuat sendiri bila perlu |
