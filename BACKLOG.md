@@ -237,8 +237,8 @@ Kolom "Siapa" di tabel item: **C** Claude, **K** kamu, **I** istri.
 - [ ] Bukti submit tersimpan
 
 **Status F6 (31 Okt):**
-- F6-01 onboarding (ringkasan privasi, centang 18+, label AI, juga di tab Akun): selesai dan terkompilasi; **belum dicoba di emulator** karena MuMu mati
-- F6-02 APK rilis 9,2 MB di `android/app/build/outputs/apk/release/app-release.apk`, ditandatangani kunci debug. Kunci rilis sungguhan dibuat sendiri olehmu dengan `keytool` (lihat `android/keystore.properties.example`); tidak wajib untuk demo
+- F6-01 onboarding (ringkasan privasi, centang 18+, label AI, juga di tab Akun): selesai; dicoba di MuMu 1 Nov dari instalasi bersih APK rilis: layar tampil, tombol "Setuju dan lanjut" baru aktif setelah dua centang, lalu masuk ke layar login dan tidak muncul lagi saat aplikasi dibuka ulang
+- F6-02 APK rilis 9,2 MB di `android/app/build/outputs/apk/release/app-release.apk`, ditandatangani kunci debug. Kunci rilis sungguhan dibuat sendiri olehmu dengan `keytool` (lihat `android/keystore.properties.example`); tidak wajib untuk demo. Instalasi bersih di MuMu 1 Nov berhasil; login dan alur demo dari instalasi baru belum dicoba
 - F6-03 README bahasa Inggris untuk juri: selesai
 - F6-04 naskah video 3 menit + daftar cek izin dan privasi: [VIDEO.md](VIDEO.md), menunggu persetujuanmu
 - F6-05/06 rekam video dan submit: tugasmu
